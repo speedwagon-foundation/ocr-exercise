@@ -122,6 +122,8 @@ class OCRAnalysis(
             }
         }
         return letters.toList()
+
+        // TODO convert letters to SubImageRegion
     }
 
     private fun BooleanArray.isFalse(): Boolean = this.none { it }
