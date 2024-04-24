@@ -55,9 +55,28 @@ class OCRAnalysis(
         println("value: ${output[50, 50]}")
 
         val lines = getLines(output)
+        var heightUntilNow = 0
+        val allSubregions = mutableListOf<SubImageRegion>()
         lines.forEach { line ->
             val letters = getLetters(line)
+            var widthUntilNow = 0
+            val subregions = letters.map {
+                val res = convertToSubimageRegion(it, widthUntilNow, heightUntilNow)
+                widthUntilNow += it.cols()
+                res
+            }
+            allSubregions.addAll(subregions)
+            heightUntilNow+= line.rows()
         }
+        var x = 0
+    }
+
+    fun convertToSubimageRegion(letter: Mat, widthUntilNow: Int, heightUntilNow: Int): SubImageRegion {
+        val letterWidth = letter.cols()
+        val letterHeight = letter.rows()
+
+
+        return SubImageRegion(widthUntilNow, heightUntilNow, letterWidth, letterHeight, letter)
     }
 
     fun getLines(image: Mat): List<Mat> {
@@ -122,8 +141,6 @@ class OCRAnalysis(
             }
         }
         return letters.toList()
-
-        // TODO convert letters to SubImageRegion
     }
 
     private fun BooleanArray.isFalse(): Boolean = this.none { it }
