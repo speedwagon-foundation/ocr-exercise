@@ -38,7 +38,7 @@ class OCRAnalysis(
     private val F_MaxDistX: Int = 0,
     private val F_MaxDistY: Int = 0,
 ) {
-    private val refCharIndex = 15
+    private val refCharIndex = 2
 
     fun run(imagePath: String) {
         val image = loadImage(imagePath)
@@ -135,7 +135,7 @@ class OCRAnalysis(
         }.toDoubleArray()
     }
 
-    private val CORR_COEFFICIENT_LIMIT = 0.99999
+    private val CORR_COEFFICIENT_LIMIT = 0.99999999999
     private fun isMatchingChar(currFeatureArray: DoubleArray, referenceFeatureArray: DoubleArray): Boolean {
         val correlationCoefficient = correlationCoefficient(currFeatureArray, referenceFeatureArray)
         return correlationCoefficient > CORR_COEFFICIENT_LIMIT
@@ -206,7 +206,6 @@ class OCRAnalysis(
         for (i in 0 until width) {
             for (j in 0 until height) {
                 if (letter.imgFragment[j, i][0] == fgVal) {
-                    println("Coloring pixel: ${y + j}, ${x + i}")
                     image.put(y + j, x + i, 0.0, 0.0, 255.0)
                 }
             }
@@ -252,7 +251,6 @@ class OCRAnalysis(
                 val subImage = image.submat(startRow, endRow, 0, image.cols())
                 Imgcodecs.imwrite("output/subimage_$startRow-$endRow.png", subImage)
                 lines.add(Pair(startRow,subImage))
-                // split image into rows / subimages
             } else {
                 currRow++
             }
@@ -275,7 +273,6 @@ class OCRAnalysis(
         var startCol = 0
         var endCol = 0
         while (currCol < line.cols()) {
-//            println("currcol: $currCol | line.cols: ${line.cols()}")
             var colArray = getCol(currCol)
 
             if (colArray.isFalse()) {
@@ -322,7 +319,6 @@ class ImageFeatureF_MaxDistX : ImageFeatureBase("F_MaxDistX") {
                 }
             }
         }
-//        println("earliestX: $earliestX, latestX: $latestX")
         return (latestX - earliestX).toDouble()
     }
 }
