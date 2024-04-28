@@ -36,11 +36,13 @@ fun Mat.to2DBoolArray(): Array<BooleanArray> {
 class OCRAnalysis(
     private val F_FGcount: Int = 0,
     private val F_MaxDistX: Int = 0,
-    private val F_MaxDistY: Int = 0
+    private val F_MaxDistY: Int = 0,
 ) {
+    private val refCharIndex = 15
+
     fun run(imagePath: String) {
         val image = loadImage(imagePath)
-        HighGui.imshow("test window", image)
+        //HighGui.imshow("test window", image)
 
         val gray = Mat()
         Imgproc.cvtColor(image, gray, Imgproc.COLOR_BGR2GRAY)
@@ -54,23 +56,18 @@ class OCRAnalysis(
         Imgproc.threshold(gray, output, thresholdValue, maxValue, Imgproc.THRESH_BINARY)
 
         // Save the output image
-        HighGui.imshow("bnw", output)
+        //HighGui.imshow("bnw", output)
 
         val lines = getLines(output)
-        var heightUntilNow = 0
         val allSubregions = mutableListOf<SubImageRegion>()
         lines.forEach { line ->
-            val letters = getLetters(line)
-            var widthUntilNow = 0
+            val letters = getLetters(line.second)
             val subregions = letters.map {
-                val res = convertToSubimageRegion(it, widthUntilNow, heightUntilNow)
-                widthUntilNow += it.cols()
+                val res = convertToSubimageRegion(it.second, it.first, line.first)
                 res
             }
             allSubregions.addAll(subregions)
-            heightUntilNow += line.rows()
         }
-        var x = 0
 
         val features = listOf(
             ImageFeatureF_FGCount(),
@@ -100,7 +97,7 @@ class OCRAnalysis(
         println("normArr: ${normArr.joinToString(", ")}")
 
         // lower case a
-        val referenceCharacter = allSubregions[5]
+        val referenceCharacter = allSubregions[refCharIndex]
         val referenceFeatures = calcFeatureArr(referenceCharacter, 0.0, features)
         val normalizedRefFeatures = normalize(referenceFeatures, normArr, stdDevs)
         println("referenceFeatures: ${referenceFeatures.joinToString(", ")}")
@@ -235,9 +232,9 @@ class OCRAnalysis(
         return SubImageRegion(widthUntilNow, heightUntilNow, letterWidth, letterHeight, letter)
     }
 
-    fun getLines(image: Mat): List<Mat> {
+    fun getLines(image: Mat): List<Pair<Int,Mat>> {
         // split by rows
-        val lines = mutableListOf<Mat>()
+        val lines = mutableListOf<Pair<Int,Mat>>()
         var currRow = 0
         val converted = image.to2DBoolArray()
         var startRow = 0
@@ -254,7 +251,7 @@ class OCRAnalysis(
 
                 val subImage = image.submat(startRow, endRow, 0, image.cols())
                 Imgcodecs.imwrite("output/subimage_$startRow-$endRow.png", subImage)
-                lines.add(subImage)
+                lines.add(Pair(startRow,subImage))
                 // split image into rows / subimages
             } else {
                 currRow++
@@ -263,7 +260,7 @@ class OCRAnalysis(
         return lines.toList()
     }
 
-    fun getLetters(line: Mat): List<Mat> {
+    fun getLetters(line: Mat): List<Pair<Int, Mat>> {
         fun getCol(colIndex: Int): BooleanArray {
             val array = BooleanArray(line.cols())
             for (i in 0 until line.rows()) {
@@ -272,7 +269,7 @@ class OCRAnalysis(
             return array
         }
 
-        val letters = mutableListOf<Mat>()
+        val letters = mutableListOf<Pair<Int, Mat>>()
         var currCol = 0
         val converted = line.to2DBoolArray()
         var startCol = 0
@@ -293,7 +290,7 @@ class OCRAnalysis(
 
                 val subImage = line.submat(0, line.rows(), startCol, endCol)
                 Imgcodecs.imwrite("output/letters/subimage_$startCol-$endCol.png", subImage)
-                letters.add(subImage)
+                letters.add(Pair(startCol, subImage))
             }
         }
         return letters.toList()
