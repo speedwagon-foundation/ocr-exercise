@@ -2,6 +2,7 @@
 
 package hofwimmer.lukas
 
+import ImageFeatureBase
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.highgui.HighGui
@@ -69,6 +70,18 @@ class OCRAnalysis(
             heightUntilNow+= line.rows()
         }
         var x = 0
+
+        // first: convert image to binary - where are black pixels present
+        // second: find lines. - a line starts and ends if there is a black pixel in the row
+        // third: separate individual characters. fire through vertical. for every column if there is a black pixel, it is a character - bounding box contains character
+        // fourth: get features: summe von foreground pixel, height width,
+        // fifth: normalize features - z normalization
+        // sixth: use reference character set to compare the characters
+
+        // use reference character set to compare the characters - normalize features
+        // z normalization
+
+        
     }
 
     fun convertToSubimageRegion(letter: Mat, widthUntilNow: Int, heightUntilNow: Int): SubImageRegion {
@@ -142,11 +155,51 @@ class OCRAnalysis(
         }
         return letters.toList()
     }
-
     private fun BooleanArray.isFalse(): Boolean = this.none { it }
-
 
     private fun loadImage(imagePath: String): Mat {
         return Imgcodecs.imread(imagePath)
+    }
+}
+
+sealed class ImageFeatureF_FGCount : ImageFeatureBase("F_FGCount") {
+    override fun calcFeatureVal(imgRegion: SubImageRegion?, FG_val: Int): Double {
+        return imgRegion?.imgFragment?.to2DBoolArray()?.sumOf { it.count { bool -> bool } }?.toDouble() ?: 0.0
+    }
+}
+
+sealed class ImageFeatureF_MaxDistX : ImageFeatureBase("F_MaxDistX") {
+    override fun calcFeatureVal(imgRegion: SubImageRegion?, FG_val: Int): Double {
+        var earliestX = Int.MAX_VALUE
+        var latestX = Int.MIN_VALUE
+
+        for(i in 0 until (imgRegion?.imgFragment?.rows() ?: 0)) {
+            for(j in 0 until (imgRegion?.imgFragment?.cols() ?: 0)) {
+                if((imgRegion?.imgFragment?.get(i, j)?.get(0) ?: 0.0) < 0.5) {
+                    earliestX = minOf(earliestX, j)
+                    latestX = maxOf(latestX, j)
+                }
+            }
+        }
+
+        return (latestX - earliestX).toDouble()
+    }
+}
+
+sealed class ImageFeatureF_MaxDistY : ImageFeatureBase("F_MaxDistY") {
+    override fun calcFeatureVal(imgRegion: SubImageRegion?, FG_val: Int): Double {
+        var earliestY = Int.MAX_VALUE
+        var latestY = Int.MIN_VALUE
+
+        for(i in 0 until (imgRegion?.imgFragment?.cols() ?: 0)) {
+            for(j in 0 until (imgRegion?.imgFragment?.rows() ?: 0)) {
+                if((imgRegion?.imgFragment?.get(i, j)?.get(0) ?: 0.0) < 0.5) {
+                    earliestY = minOf(earliestY, j)
+                    latestY = maxOf(latestY, j)
+                }
+            }
+        }
+
+        return (latestY - earliestY).toDouble()
     }
 }

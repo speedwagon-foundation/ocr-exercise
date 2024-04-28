@@ -1,6 +1,8 @@
-package hofwimmer.lukas
+import hofwimmer.lukas.SubImageRegion
 
-abstract class ImageFeatureBase {
-    var description: String = ""
-    abstract fun CalcFeatureVal(imgRegion: SubImageRegion?, FG_val: Int): Double
+
+abstract class ImageFeatureBase(
+    private val description: String
+) {
+    abstract fun calcFeatureVal(imgRegion: SubImageRegion?, FG_val: Int): Double
 }
